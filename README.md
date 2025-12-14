@@ -248,3 +248,60 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Made with ❤️ for developers and AI agents**
+
+---
+
+# WallpaperBot (Python)
+
+Cross-platform wallpaper downloader/manager optimized for triple-monitor setups.
+
+## Quickstart
+
+```bash
+poetry install
+poetry run wallpaperbot init
+poetry run wallpaperbot fetch --query "mountains" --limit 5
+poetry run wallpaperbot report
+```
+
+Set `UNSPLASH_ACCESS_KEY` in your environment for official API access.
+
+## Commands
+
+- `wallpaperbot init` – create default config at `~/.config/wallpaperbot/config.yaml`
+- `wallpaperbot fetch --query "mountains" --limit 20` – download via Unsplash API
+- `wallpaperbot curate --min-width 6000` – copy suitable images to `curated/`
+- `wallpaperbot set --latest` – set the latest download as desktop background (OS-specific)
+- `wallpaperbot doctor` – check env, keys, paths
+- `wallpaperbot report` – summarize library stats
+
+## Configuration
+
+Config is YAML (default path: `~/.config/wallpaperbot/config.yaml`). Key fields:
+
+- `monitor_count` (default 3)
+- `monitor_width` / `monitor_height` (default 1920x1080)
+- `tolerance` (aspect ratio tolerance, default 0.1)
+- `allow_crop` / `allow_upscale`
+- `output_dir` / `database_path`
+- `unsplash_access_key`
+
+Env overrides: `UNSPLASH_ACCESS_KEY`, `WALLPAPERBOT_OUTPUT_DIR`, `WALLPAPERBOT_DB_PATH`.
+
+## Safety & Compliance
+
+- Unsplash uses the official API; attribution stored in sidecar JSON metadata.
+- Other listed sources are stubbed as "unsupported" due to robots.txt/ToS restrictions; see code comments.
+- Robots.txt check is performed where applicable; no scraping is performed for disallowed sites.
+- Rate limiting and retries are handled via httpx + tenacity.
+
+## Scheduling
+
+- **Linux/macOS (cron):** `0 6 * * * /usr/bin/poetry run wallpaperbot fetch --query "sunrise" --limit 10`
+- **Windows (Task Scheduler):** Run `poetry run wallpaperbot fetch --query "space" --limit 10` daily.
+
+## Tests
+
+```bash
+poetry run pytest
+```

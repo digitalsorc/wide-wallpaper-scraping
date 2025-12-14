@@ -212,3 +212,10 @@ docs/.vitepress/dist
 
 # Local development overrides
 *.local.*
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
