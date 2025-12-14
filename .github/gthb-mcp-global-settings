@@ -1,0 +1,116 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./"],
+      "description": "File system operations for reading and writing files",
+      "enabled": true,
+      "capabilities": ["read", "write", "list", "search"],
+      "security": {
+        "sandboxed": true,
+        "allowedPaths": ["./"]
+      }
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "description": "HTTP fetch operations for API calls and web scraping",
+      "enabled": true,
+      "capabilities": ["http", "https", "api-calls", "web-scraping"],
+      "security": {
+        "rateLimit": true,
+        "timeout": 30000
+      }
+    },
+    "database-sqlite": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sqlite", "local.db"],
+      "description": "SQLite database operations for local data persistence",
+      "enabled": false,
+      "capabilities": ["query", "schema", "transactions"],
+            "setup": "No additional setup required. Enable in mcp.json and database will be created automatically."
+    },
+    "database-postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres"],
+      "env": {
+        "POSTGRES_URL": "${POSTGRES_URL}"
+      },
+      "description": "PostgreSQL database operations for production databases",
+      "enabled": false,
+      "capabilities": ["query", "schema", "transactions", "migrations"],
+            "setup": "Set POSTGRES_URL in .env file. Example: postgresql://user:pass@localhost:5432/mydb"
+    },
+    "search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "description": "Web search capabilities using Brave Search API",
+      "enabled": false,
+      "capabilities": ["web-search", "real-time-info", "fact-checking"],
+            "setup": "Get free API key from https://brave.com/search/api/ and add to .env file"
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "description": "GitHub API integration for repository operations, issues, and PRs",
+      "enabled": false,
+      "capabilities": ["repos", "issues", "prs", "actions", "code-search"],
+            "setup": "Create personal access token at https://github.com/settings/tokens with repo scope"
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "description": "Persistent memory and context storage for AI agents",
+      "enabled": false,
+      "capabilities": ["store", "retrieve", "search", "context-management"],
+            "setup": "Enable in mcp.json. Memory will be stored in .mcp-memory directory (gitignored)"
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "description": "Browser automation for testing, scraping, and screenshots",
+      "enabled": false,
+      "capabilities": ["browser-automation", "screenshots", "pdf-generation", "testing"],
+            "setup": "Enable in mcp.json. Puppeteer will download Chrome automatically on first use."
+    },
+    "aws": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-aws"],
+      "env": {
+        "AWS_ACCESS_KEY_ID": "${AWS_ACCESS_KEY_ID}",
+        "AWS_SECRET_ACCESS_KEY": "${AWS_SECRET_ACCESS_KEY}",
+        "AWS_REGION": "${AWS_REGION}"
+      },
+      "description": "AWS cloud services integration (S3, Lambda, DynamoDB, etc.)",
+      "enabled": false,
+      "capabilities": ["s3", "lambda", "dynamodb", "cloudwatch"],
+            "setup": "Configure AWS credentials in .env file or use AWS CLI credentials"
+    },
+    "docker": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-docker"],
+      "description": "Docker container management and orchestration",
+      "enabled": false,
+      "capabilities": ["containers", "images", "volumes", "networks"],
+            "setup": "Install Docker Desktop or Docker Engine. Enable in mcp.json."
+    },
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-slack"],
+      "env": {
+        "SLACK_TOKEN": "${SLACK_TOKEN}",
+        "SLACK_SIGNING_SECRET": "${SLACK_SIGNING_SECRET}"
+      },
+      "description": "Slack integration for messaging and notifications",
+      "enabled": false,
+      "capabilities": ["messages", "channels", "users", "notifications"],
+            "setup": "Create Slack app at https://api.slack.com/apps and add credentials to .env"
+    }
+}
+}

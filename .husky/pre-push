@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+echo "🚀 Running pre-push validation..."
+
+# Full validation before push
+pnpm run validate-build || {
+  echo "❌ Build validation failed. Fix errors before pushing."
+  exit 1
+}
+
+echo "✅ Pre-push validation passed"

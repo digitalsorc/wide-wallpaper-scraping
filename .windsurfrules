@@ -1,0 +1,509 @@
+# Windsurf IDE Rules for Default Starter Template
+
+## Project Overview
+
+Production-ready TypeScript starter template optimized for AI coding agents with strict type checking, comprehensive MCP server integration, modern tooling, and zero-setup configuration. Built for rapid, robust application development from day one.
+
+## Core Principles
+
+### Code Quality First
+- All code MUST pass TypeScript strict mode checks
+- Zero tolerance for `any` types - use `unknown` with type guards
+- Maintain 80%+ test coverage for critical paths
+- Code must be self-documenting with clear naming
+- Follow SOLID principles and clean code practices
+
+### AI-Optimized Development
+- Leverage MCP servers for enhanced capabilities (filesystem, fetch, search, GitHub, etc.)
+- Provide context-rich error messages for debugging
+- Write code that is easy for AI to understand and modify
+- Include comprehensive JSDoc for public APIs
+- Use descriptive variable and function names
+
+### Security by Default
+- Never hardcode secrets or API keys
+- Validate all external input at boundaries
+- Use parameterized queries for databases
+- Keep dependencies updated and audited
+- Follow principle of least privilege
+
+## TypeScript Standards
+
+### Type Safety
+```typescript
+// ✅ GOOD: Explicit types, type guards
+export function processUser(userId: string): Promise<UserResult> {
+  if (!isValidUserId(userId)) {
+    throw new ValidationError('Invalid user ID format');
+  }
+  return fetchUser(userId);
+}
+
+function isValidUserId(id: unknown): id is string {
+  return typeof id === 'string' && /^[a-z0-9-]+$/.test(id);
+}
+
+// ❌ BAD: any types, implicit returns, no validation
+export function processUser(userId: any) {
+  return fetchUser(userId);
+}
+```
+
+### Strict Mode Requirements
+- `noImplicitAny: true` - All types must be explicit
+- `strictNullChecks: true` - Handle null/undefined explicitly
+- `noImplicitReturns: true` - All code paths must return
+- `noUnusedLocals: true` - No unused variables
+- `noUncheckedIndexedAccess: true` - Safe array/object access
+
+### Async/Await Patterns
+```typescript
+// ✅ GOOD: Proper error handling, parallel execution when safe
+async function fetchUserData(userIds: string[]): Promise<UserData[]> {
+  try {
+    const promises = userIds.map(id => fetchUser(id));
+    const results = await Promise.all(promises);
+    return results.filter(Boolean);
+  } catch (error) {
+    if (error instanceof NetworkError) {
+      throw new ServiceUnavailableError('Failed to fetch user data', { cause: error });
+    }
+    throw error;
+  }
+}
+
+// ❌ BAD: No error handling, sequential when could be parallel
+async function fetchUserData(userIds: string[]) {
+  const results = [];
+  for (const id of userIds) {
+    results.push(await fetchUser(id));
+  }
+  return results;
+}
+```
+
+## File Organization
+
+### Directory Structure
+```
+src/
+├── index.ts              # Main entry point, exports public API
+├── config/               # Configuration management
+│   ├── default.ts        # Default configuration
+│   ├── environment.ts    # Environment-specific config
+│   └── validator.ts      # Config validation
+├── types/                # TypeScript type definitions
+│   ├── index.ts          # Export all types
+│   ├── config.ts         # Configuration types
+│   ├── api.ts            # API request/response types
+│   └── domain.ts         # Domain models
+├── services/             # Business logic layer
+│   ├── user-service.ts   # User-related operations
+│   └── auth-service.ts   # Authentication logic
+├── utils/                # Utility functions
+│   ├── validation.ts     # Input validation
+│   ├── errors.ts         # Custom error classes
+│   └── logger.ts         # Logging utilities
+└── api/                  # API client/server code
+    ├── client.ts         # HTTP client
+    └── routes.ts         # API routes
+
+tests/
+├── unit/                 # Unit tests
+├── integration/          # Integration tests
+└── fixtures/             # Test fixtures and mocks
+```
+
+### Naming Conventions
+- **Files**: kebab-case (e.g., `user-service.ts`, `auth-helper.ts`)
+- **Classes/Interfaces**: PascalCase (e.g., `UserService`, `AuthConfig`)
+- **Functions/Variables**: camelCase (e.g., `getUserById`, `isValidEmail`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_RETRY_COUNT`, `API_BASE_URL`)
+- **Private members**: prefix with _ (e.g., `_internalCache`)
+- **Test files**: `*.test.ts` or `*.spec.ts`
+
+### Import Organization
+```typescript
+// 1. External dependencies (node_modules)
+import { readFile } from 'fs/promises';
+import express from 'express';
+
+// 2. Internal modules (relative imports)
+import { UserService } from './services/user-service';
+import { validateInput } from './utils/validation';
+
+// 3. Type imports (separate for clarity)
+import type { Config } from './types/config';
+import type { UserData, UserResult } from './types/domain';
+
+// 4. Constants and configuration
+import { DEFAULT_CONFIG } from './config/default';
+import { API_ENDPOINTS } from './constants';
+```
+
+## Error Handling
+
+### Custom Error Classes
+```typescript
+// Define domain-specific errors
+export class ValidationError extends Error {
+  constructor(
+    message: string,
+    public field: string,
+    public value: unknown
+  ) {
+    super(message);
+    this.name = 'ValidationError';
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+export class ServiceUnavailableError extends Error {
+  constructor(
+    message: string,
+    public readonly cause?: Error
+  ) {
+    super(message);
+    this.name = 'ServiceUnavailableError';
+  }
+}
+```
+
+### Error Handling Patterns
+```typescript
+// ✅ GOOD: Specific error handling, context preservation
+async function processPayment(amount: number, currency: string): Promise<PaymentResult> {
+  try {
+    validateAmount(amount);
+    validateCurrency(currency);
+    
+    const result = await paymentGateway.charge({ amount, currency });
+    return result;
+  } catch (error) {
+    if (error instanceof ValidationError) {
+      throw new PaymentValidationError(error.message, { field: error.field });
+    }
+    if (error instanceof NetworkError) {
+      throw new ServiceUnavailableError('Payment gateway unavailable', error);
+    }
+    // Unexpected error - log and re-throw
+    logger.error('Unexpected payment error', { error, amount, currency });
+    throw error;
+  }
+}
+```
+
+## Testing Standards
+
+### Test Structure (AAA Pattern)
+```typescript
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+describe('UserService', () => {
+  let userService: UserService;
+  let mockDatabase: MockDatabase;
+
+  beforeEach(() => {
+    mockDatabase = createMockDatabase();
+    userService = new UserService(mockDatabase);
+  });
+
+  describe('getUserById', () => {
+    it('should return user when user exists', async () => {
+      // Arrange
+      const userId = 'user-123';
+      const expectedUser = { id: userId, name: 'John Doe' };
+      mockDatabase.findById.mockResolvedValue(expectedUser);
+
+      // Act
+      const result = await userService.getUserById(userId);
+
+      // Assert
+      expect(result).toEqual(expectedUser);
+      expect(mockDatabase.findById).toHaveBeenCalledWith(userId);
+    });
+
+    it('should throw UserNotFoundError when user does not exist', async () => {
+      // Arrange
+      const userId = 'nonexistent';
+      mockDatabase.findById.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(userService.getUserById(userId))
+        .rejects
+        .toThrow(UserNotFoundError);
+    });
+  });
+});
+```
+
+### Test Coverage Requirements
+- Critical business logic: 90%+ coverage
+- Utility functions: 80%+ coverage
+- Configuration and setup: 70%+ coverage
+- Focus on edge cases and error paths
+- Mock external dependencies (APIs, databases, filesystem)
+
+### Test Naming
+Use descriptive names that explain the scenario:
+- ✅ `it('should return 404 when user is not found')`
+- ✅ `it('should retry request 3 times on network failure')`
+- ❌ `it('test user fetch')`
+- ❌ `it('works')`
+
+## Performance Guidelines
+
+### Optimization Strategies
+```typescript
+// ✅ GOOD: Parallel execution, memoization, early returns
+const userCache = new Map<string, User>();
+
+async function fetchUsers(userIds: string[]): Promise<User[]> {
+  // Early return for empty input
+  if (userIds.length === 0) return [];
+
+  // Check cache first
+  const uncachedIds = userIds.filter(id => !userCache.has(id));
+  
+  if (uncachedIds.length === 0) {
+    return userIds.map(id => userCache.get(id)!);
+  }
+
+  // Fetch only uncached users in parallel
+  const promises = uncachedIds.map(id => fetchUser(id));
+  const users = await Promise.all(promises);
+  
+  // Update cache
+  users.forEach(user => userCache.set(user.id, user));
+  
+  return userIds.map(id => userCache.get(id)!);
+}
+```
+
+### Avoid Common Pitfalls
+- ❌ N+1 queries - use batch fetching
+- ❌ Synchronous file operations - use async fs/promises
+- ❌ Unnecessary re-renders - memoize expensive computations
+- ❌ Large synchronous operations - use streaming or pagination
+- ❌ Memory leaks - clean up listeners and subscriptions
+
+## MCP Server Integration
+
+### Available Servers
+1. **Filesystem**: Read/write files, search project
+2. **Fetch**: HTTP requests, API calls, web scraping
+3. **GitHub**: Repo operations, issues, PRs, code search
+4. **Database**: SQLite (local), PostgreSQL (production)
+5. **Search**: Brave Search for real-time information
+6. **Memory**: Persistent context across sessions
+7. **Puppeteer**: Browser automation, screenshots, PDFs
+8. **AWS**: Cloud services (S3, Lambda, DynamoDB)
+9. **Docker**: Container management
+10. **Slack**: Team notifications and messaging
+
+### Using MCP Servers
+- Enable servers in `mcp.json` by setting `"enabled": true`
+- Configure API keys in `.env` file (never in code)
+- See `docs/MCP_SETUP.md` for detailed configuration
+- Leverage servers to automate repetitive tasks
+- Use filesystem server for code generation
+- Use search server for current information
+
+## Development Workflow
+
+### Before Every Commit
+```bash
+# 1. Type check
+pnpm run typecheck
+
+# 2. Lint and auto-fix
+pnpm run lint:fix
+
+# 3. Format code
+pnpm run format
+
+# 4. Run tests
+pnpm run test
+
+# 5. Check coverage (optional)
+pnpm run test:coverage
+```
+
+### Adding New Features
+1. **Design**: Plan the feature, define types and interfaces
+2. **Test First**: Write tests for the feature (TDD approach)
+3. **Implement**: Write minimal code to pass tests
+4. **Refactor**: Clean up code, add documentation
+5. **Integration**: Ensure feature works with rest of system
+6. **Documentation**: Update README, add JSDoc comments
+
+### Adding Dependencies
+```bash
+# 1. Check for vulnerabilities first
+npm info <package-name>
+
+# 2. Add dependency
+pnpm add <package-name>
+
+# 3. Add type definitions if needed
+pnpm add -D @types/<package-name>
+
+# 4. Update documentation if it affects API
+```
+
+## Documentation Standards
+
+### JSDoc for Public APIs
+```typescript
+/**
+ * Processes user data and returns formatted result
+ * 
+ * @param userId - The unique identifier of the user
+ * @param options - Optional processing options
+ * @param options.includeMetadata - Whether to include user metadata
+ * @param options.format - Output format (json, xml, or csv)
+ * @returns Promise resolving to formatted user data
+ * @throws {UserNotFoundError} When user with given ID doesn't exist
+ * @throws {ValidationError} When userId format is invalid
+ * 
+ * @example
+ * ```typescript
+ * const user = await processUser('user-123', { format: 'json' });
+ * console.log(user.name);
+ * ```
+ */
+export async function processUser(
+  userId: string,
+  options?: ProcessUserOptions
+): Promise<FormattedUser> {
+  // Implementation
+}
+```
+
+### Code Comments
+```typescript
+// ✅ GOOD: Explain WHY, not WHAT
+// Using exponential backoff to handle rate limiting from external API
+const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
+
+// ❌ BAD: States the obvious
+// Set delay variable
+const delay = 1000 * Math.pow(2, retryCount);
+```
+
+## Security Checklist
+
+### Input Validation
+- ✅ Validate all external input at API boundaries
+- ✅ Use type guards for runtime type checking
+- ✅ Sanitize user input to prevent injection attacks
+- ✅ Implement rate limiting for API endpoints
+- ✅ Use prepared statements for database queries
+
+### Secrets Management
+- ✅ Store secrets in `.env` file (never in code)
+- ✅ Use different secrets for dev/staging/production
+- ✅ Rotate secrets regularly (every 90 days)
+- ✅ Use environment variables for configuration
+- ✅ Add `.env` to `.gitignore`
+
+### Dependencies
+- ✅ Run `pnpm audit` regularly
+- ✅ Keep dependencies updated
+- ✅ Review security advisories
+- ✅ Use exact versions in package.json
+- ✅ Minimize dependency count
+
+## Common Patterns
+
+### Configuration Management
+```typescript
+// config/environment.ts
+export function getConfig(): Config {
+  const env = process.env.NODE_ENV || 'development';
+  
+  const baseConfig: Config = {
+    appName: process.env.APP_NAME || 'My App',
+    port: parseInt(process.env.PORT || '3000', 10),
+    debug: process.env.DEBUG === 'true',
+  };
+
+  // Validate required environment variables
+  const required = ['DATABASE_URL', 'API_KEY'];
+  for (const key of required) {
+    if (!process.env[key]) {
+      throw new Error(`Missing required environment variable: ${key}`);
+    }
+  }
+
+  return baseConfig;
+}
+```
+
+### Logging
+```typescript
+// utils/logger.ts
+export const logger = {
+  info: (message: string, meta?: Record<string, unknown>) => {
+    console.log(JSON.stringify({ level: 'info', message, ...meta, timestamp: new Date().toISOString() }));
+  },
+  error: (message: string, error?: Error, meta?: Record<string, unknown>) => {
+    console.error(JSON.stringify({ level: 'error', message, error: error?.message, stack: error?.stack, ...meta, timestamp: new Date().toISOString() }));
+  },
+};
+```
+
+### Retry Logic
+```typescript
+// utils/retry.ts
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: { maxRetries: number; delayMs: number }
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let i = 0; i < options.maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      if (i < options.maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, options.delayMs * (i + 1)));
+      }
+    }
+  }
+  
+  throw lastError!;
+}
+```
+
+## Resources
+
+- **Project Documentation**: `/docs` directory
+- **MCP Setup Guide**: `docs/MCP_SETUP.md`
+- **Conventions**: `docs/CONVENTIONS.md`
+- **TypeScript Docs**: https://www.typescriptlang.org/docs/
+- **Vitest Docs**: https://vitest.dev/
+- **Biome Docs**: https://biomejs.dev/
+
+## AI Agent Collaboration
+
+### When to Ask for Human Review
+- Breaking API changes
+- Security-sensitive code (authentication, authorization)
+- Database migrations or schema changes
+- Complex architectural decisions
+- Performance-critical optimizations
+- Ambiguous requirements
+
+### Best Practices for AI-Assisted Coding
+- Provide clear, specific instructions
+- Break complex tasks into smaller steps
+- Review generated code for correctness and style
+- Test thoroughly before committing
+- Ask for explanations when needed
+- Suggest improvements and alternatives
+
+---
+
+**Remember**: Code is read far more often than it is written. Write code that is easy to understand, maintain, and extend.

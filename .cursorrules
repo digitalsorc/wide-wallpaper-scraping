@@ -1,0 +1,612 @@
+# Cursor AI Rules for Default Starter Template
+
+## Project Context
+
+Production-ready TypeScript starter template optimized for AI-assisted development with strict type checking, comprehensive MCP server integration, modern development tooling, and zero-setup configuration. This template is designed for building robust applications from day one with emphasis on type safety, testing, and developer experience.
+
+## Core Principles
+
+### 1. Type Safety First
+- **Zero tolerance for `any`**: Use `unknown` with proper type guards instead
+- **Explicit is better than implicit**: Always provide return types for exported functions
+- **Strict mode always**: All TypeScript strict checks must pass
+- **Runtime validation**: Use type guards for external data
+- **Null safety**: Handle `null`/`undefined` explicitly with optional chaining
+
+### 2. Test-Driven Development
+- **Write tests first** when adding new features (TDD approach)
+- **Maintain 80%+ coverage** on critical business logic
+- **Test edge cases** and error paths, not just happy paths
+- **Use descriptive names**: `it('should throw ValidationError when email is empty')`
+- **Mock external dependencies**: Databases, APIs, filesystem operations
+
+### 3. Clean Code Standards
+- **Self-documenting code**: Use clear, descriptive names over comments
+- **Single Responsibility**: Each function/class should do one thing well
+- **DRY principle**: Don't Repeat Yourself - extract common patterns
+- **SOLID principles**: Especially Single Responsibility and Dependency Inversion
+- **Keep it simple**: Prefer simple solutions over clever ones
+
+### 4. Security by Default
+- **Never hardcode secrets**: Use environment variables exclusively
+- **Validate all inputs**: Sanitize and validate at system boundaries
+- **Prepared statements**: Always use parameterized queries
+- **Least privilege**: Grant minimum necessary permissions
+- **Regular audits**: Run `pnpm audit` before adding dependencies
+
+## TypeScript Standards
+
+### Type Safety Rules
+
+```typescript
+// ✅ GOOD: Explicit types, proper validation, type guards
+export function processUser(userId: string): Promise<UserResult> {
+  if (!isValidUserId(userId)) {
+    throw new ValidationError('Invalid user ID format', { userId });
+  }
+  return fetchAndProcessUser(userId);
+}
+
+function isValidUserId(value: unknown): value is string {
+  return typeof value === 'string' && /^usr_[a-z0-9]+$/.test(value);
+}
+
+// ❌ BAD: any types, no validation, implicit returns
+export function processUser(userId: any) {
+  return fetchAndProcessUser(userId);
+}
+```
+
+### Strict Mode Requirements (All Must Pass)
+- `strict: true` - Enable all strict type checks
+- `noImplicitAny: true` - No implicit any types
+- `strictNullChecks: true` - Explicit null/undefined handling
+- `strictFunctionTypes: true` - Strict function type checking
+- `noImplicitReturns: true` - All code paths must return
+- `noUnusedLocals: true` - No unused variables
+- `noUnusedParameters: true` - No unused function parameters
+- `noUncheckedIndexedAccess: true` - Safe array/object access
+
+### Async/Await Best Practices
+
+```typescript
+// ✅ GOOD: Proper error handling, parallel execution, early returns
+async function fetchMultipleUsers(userIds: string[]): Promise<User[]> {
+  if (userIds.length === 0) return [];
+
+  try {
+    // Execute in parallel for better performance
+    const promises = userIds.map(id => fetchUser(id));
+    const users = await Promise.all(promises);
+    
+    // Filter out null results (deleted users)
+    return users.filter((user): user is User => user !== null);
+  } catch (error) {
+    if (error instanceof NetworkError) {
+      throw new ServiceUnavailableError('User service unavailable', { cause: error });
+    }
+    throw error;
+  }
+}
+
+// ❌ BAD: No error handling, sequential when could be parallel
+async function fetchMultipleUsers(userIds: string[]) {
+  const users = [];
+  for (const id of userIds) {
+    users.push(await fetchUser(id)); // Sequential - slow!
+  }
+  return users;
+}
+```
+
+## Code Organization
+
+### File Structure
+```
+src/
+├── index.ts              # Public API exports only
+├── config/
+│   ├── default.ts        # Default configuration
+│   ├── environment.ts    # Env-specific overrides
+│   └── validator.ts      # Config validation
+├── types/
+│   ├── index.ts          # Re-export all types
+│   ├── config.ts         # Configuration types
+│   ├── api.ts            # API types
+│   └── domain.ts         # Domain models
+├── services/
+│   ├── user-service.ts   # User business logic
+│   └── auth-service.ts   # Authentication logic
+├── utils/
+│   ├── validation.ts     # Input validation helpers
+│   ├── errors.ts         # Custom error classes
+│   ├── logger.ts         # Logging utilities
+│   └── retry.ts          # Retry logic
+└── api/
+    ├── client.ts         # HTTP client wrapper
+    └── handlers.ts       # Request handlers
+
+tests/
+├── unit/                 # Unit tests (isolated)
+├── integration/          # Integration tests
+└── fixtures/             # Test data and mocks
+```
+
+### Naming Conventions (Strictly Enforced)
+- **Files**: `kebab-case.ts` (e.g., `user-service.ts`, `api-client.ts`)
+- **Classes/Interfaces**: `PascalCase` (e.g., `UserService`, `ApiClient`)
+- **Functions/Variables**: `camelCase` (e.g., `getUserById`, `isValidEmail`)
+- **Constants**: `UPPER_SNAKE_CASE` (e.g., `MAX_RETRY_COUNT`, `API_BASE_URL`)
+- **Private members**: `_prefixWithUnderscore` (e.g., `_cacheStore`, `_validateInternal`)
+- **Booleans**: `is/has/should` prefix (e.g., `isValid`, `hasError`, `shouldRetry`)
+- **Test files**: `*.test.ts` or `*.spec.ts`
+
+### Import Organization (Mandatory Order)
+
+```typescript
+// 1. Node.js built-ins
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+// 2. External dependencies (node_modules)
+import express from 'express';
+import { z } from 'zod';
+
+// 3. Internal modules (relative imports, grouped by type)
+import { UserService } from './services/user-service';
+import { AuthService } from './services/auth-service';
+import { validateInput, sanitizeHtml } from './utils/validation';
+import { logger } from './utils/logger';
+
+// 4. Type imports (separate for clarity)
+import type { Config } from './types/config';
+import type { User, UserCreateInput } from './types/domain';
+import type { ApiResponse } from './types/api';
+
+// 5. Constants and configuration
+import { DEFAULT_CONFIG } from './config/default';
+import { API_ENDPOINTS } from './constants/endpoints';
+```
+
+## Error Handling
+
+### Custom Error Classes
+
+```typescript
+// Base application error
+export class ApplicationError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly statusCode: number = 500,
+    public readonly context?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = this.constructor.name;
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+// Domain-specific errors
+export class ValidationError extends ApplicationError {
+  constructor(message: string, context?: { field: string; value: unknown }) {
+    super(message, 'VALIDATION_ERROR', 400, context);
+  }
+}
+
+export class NotFoundError extends ApplicationError {
+  constructor(resource: string, id: string) {
+    super(`${resource} not found`, 'NOT_FOUND', 404, { resource, id });
+  }
+}
+
+export class UnauthorizedError extends ApplicationError {
+  constructor(message: string = 'Unauthorized') {
+    super(message, 'UNAUTHORIZED', 401);
+  }
+}
+```
+
+### Error Handling Pattern
+
+```typescript
+// ✅ GOOD: Comprehensive error handling with context
+async function processPayment(
+  amount: number,
+  currency: string,
+  userId: string
+): Promise<PaymentResult> {
+  // Validate inputs
+  if (amount <= 0) {
+    throw new ValidationError('Amount must be positive', { field: 'amount', value: amount });
+  }
+  
+  if (!['USD', 'EUR', 'GBP'].includes(currency)) {
+    throw new ValidationError('Invalid currency', { field: 'currency', value: currency });
+  }
+
+  try {
+    // Attempt payment processing
+    const result = await paymentGateway.charge({ amount, currency, userId });
+    
+    // Log successful payment
+    logger.info('Payment processed successfully', {
+      userId,
+      amount,
+      currency,
+      transactionId: result.id,
+    });
+    
+    return result;
+  } catch (error) {
+    // Handle specific error types
+    if (error instanceof PaymentGatewayError) {
+      if (error.code === 'INSUFFICIENT_FUNDS') {
+        throw new PaymentFailedError('Insufficient funds', { userId, amount });
+      }
+      if (error.code === 'CARD_DECLINED') {
+        throw new PaymentFailedError('Card declined', { userId });
+      }
+    }
+    
+    if (error instanceof NetworkError) {
+      throw new ServiceUnavailableError('Payment gateway unavailable', error);
+    }
+    
+    // Log unexpected errors
+    logger.error('Unexpected payment error', {
+      error,
+      userId,
+      amount,
+      currency,
+    });
+    
+    throw new ApplicationError('Payment processing failed', 'PAYMENT_ERROR', 500, {
+      originalError: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+```
+
+## Testing Standards
+
+### Test Structure (AAA Pattern)
+
+```typescript
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
+describe('UserService', () => {
+  let userService: UserService;
+  let mockDatabase: MockDatabase;
+  let mockCache: MockCache;
+
+  beforeEach(() => {
+    // Arrange: Set up test dependencies
+    mockDatabase = createMockDatabase();
+    mockCache = createMockCache();
+    userService = new UserService(mockDatabase, mockCache);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('getUserById', () => {
+    it('should return user from cache when available', async () => {
+      // Arrange
+      const userId = 'user-123';
+      const cachedUser = { id: userId, name: 'John Doe', email: 'john@example.com' };
+      mockCache.get.mockResolvedValue(cachedUser);
+
+      // Act
+      const result = await userService.getUserById(userId);
+
+      // Assert
+      expect(result).toEqual(cachedUser);
+      expect(mockCache.get).toHaveBeenCalledWith(`user:${userId}`);
+      expect(mockDatabase.findById).not.toHaveBeenCalled();
+    });
+
+    it('should fetch from database and cache when not in cache', async () => {
+      // Arrange
+      const userId = 'user-456';
+      const dbUser = { id: userId, name: 'Jane Smith', email: 'jane@example.com' };
+      mockCache.get.mockResolvedValue(null);
+      mockDatabase.findById.mockResolvedValue(dbUser);
+
+      // Act
+      const result = await userService.getUserById(userId);
+
+      // Assert
+      expect(result).toEqual(dbUser);
+      expect(mockCache.get).toHaveBeenCalledWith(`user:${userId}`);
+      expect(mockDatabase.findById).toHaveBeenCalledWith(userId);
+      expect(mockCache.set).toHaveBeenCalledWith(`user:${userId}`, dbUser, 3600);
+    });
+
+    it('should throw NotFoundError when user does not exist', async () => {
+      // Arrange
+      const userId = 'nonexistent';
+      mockCache.get.mockResolvedValue(null);
+      mockDatabase.findById.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(userService.getUserById(userId))
+        .rejects
+        .toThrow(NotFoundError);
+      
+      await expect(userService.getUserById(userId))
+        .rejects
+        .toThrow('User not found');
+    });
+  });
+});
+```
+
+### Test Coverage Requirements
+- **Critical business logic**: 90%+ (authentication, payments, data processing)
+- **Services and utilities**: 80%+ (business rules, helpers)
+- **Configuration and setup**: 70%+ (startup, config loading)
+- **Edge cases**: Test boundaries, null values, empty arrays, large inputs
+- **Error paths**: Test all error handling branches
+
+### Test Naming Convention
+Use descriptive names that explain the scenario clearly:
+- ✅ `should return 404 status code when user is not found`
+- ✅ `should retry request 3 times before throwing error`
+- ✅ `should cache user data for 1 hour after successful fetch`
+- ❌ `test user fetch` (too vague)
+- ❌ `getUserById works` (not descriptive)
+- ❌ `edge case` (what edge case?)
+
+## Development Workflow
+
+### Pre-Commit Checklist (Run Before Every Commit)
+
+```bash
+# 1. Type check (must pass with zero errors)
+pnpm run typecheck
+
+# 2. Lint and auto-fix issues
+pnpm run lint:fix
+
+# 3. Format code
+pnpm run format
+
+# 4. Run all tests
+pnpm run test
+
+# 5. Optional: Check test coverage
+pnpm run test:coverage
+
+# 6. Optional: Build to catch runtime errors
+pnpm run build
+```
+
+### Adding New Features (Step-by-Step)
+
+1. **Design Phase**
+   - Define types and interfaces first
+   - Plan error handling strategy
+   - Consider edge cases
+
+2. **Test First (TDD)**
+   - Write failing test for new feature
+   - Define expected behavior clearly
+   - Include edge cases and error scenarios
+
+3. **Implementation**
+   - Write minimal code to pass tests
+   - Follow existing patterns
+   - Add JSDoc for public APIs
+
+4. **Refactor**
+   - Clean up code
+   - Extract reusable components
+   - Optimize if needed
+
+5. **Integration**
+   - Ensure feature works with rest of system
+   - Update related documentation
+   - Check for breaking changes
+
+6. **Documentation**
+   - Update README.md if needed
+   - Add JSDoc comments
+   - Include usage examples
+
+### Adding Dependencies
+
+```bash
+# 1. Research the package
+npm info <package-name>
+
+# 2. Check for security issues
+pnpm audit
+
+# 3. Add production dependency
+pnpm add <package-name>
+
+# 4. Add development dependency
+pnpm add -D <package-name>
+
+# 5. Add type definitions if needed
+pnpm add -D @types/<package-name>
+
+# 6. Update documentation if it affects public API
+```
+
+## MCP Server Integration
+
+### Available MCP Servers
+1. **Filesystem**: File read/write, search, metadata
+2. **Fetch**: HTTP requests, API calls, web scraping
+3. **GitHub**: Repository operations, issues, PRs, Actions
+4. **Database**: SQLite (local), PostgreSQL (production)
+5. **Search**: Brave Search API for real-time information
+6. **Memory**: Persistent context and knowledge storage
+7. **Puppeteer**: Browser automation, screenshots, E2E testing
+8. **AWS**: S3, Lambda, DynamoDB, CloudWatch
+9. **Docker**: Container management and orchestration
+10. **Slack**: Team messaging and notifications
+
+### Configuration
+- Enable servers in `mcp.json` by setting `"enabled": true`
+- Store API keys in `.env` file (never in code!)
+- See `docs/MCP_SETUP.md` for detailed setup instructions
+- Restart IDE/agent after modifying `mcp.json`
+
+### Using MCP Servers Effectively
+- **Leverage automation**: Use filesystem server for code generation
+- **Real-time data**: Use search server for current information
+- **CI/CD**: Use GitHub server for automated workflows
+- **Testing**: Use Puppeteer for E2E tests
+- **Monitoring**: Use Slack for deployment notifications
+
+## Performance Best Practices
+
+### Optimization Strategies
+
+```typescript
+// ✅ GOOD: Efficient with caching, parallel execution, early returns
+const userCache = new Map<string, User>();
+const CACHE_TTL = 60000; // 1 minute
+
+async function fetchUsers(userIds: string[]): Promise<User[]> {
+  // Early return for empty input
+  if (userIds.length === 0) return [];
+
+  // Check cache first
+  const now = Date.now();
+  const cachedUsers: User[] = [];
+  const uncachedIds: string[] = [];
+
+  for (const id of userIds) {
+    const cached = userCache.get(id);
+    if (cached && (now - cached.timestamp) < CACHE_TTL) {
+      cachedUsers.push(cached.user);
+    } else {
+      uncachedIds.push(id);
+    }
+  }
+
+  // Fetch uncached users in parallel
+  if (uncachedIds.length > 0) {
+    const promises = uncachedIds.map(id => fetchUser(id));
+    const freshUsers = await Promise.all(promises);
+    
+    // Update cache
+    freshUsers.forEach(user => {
+      userCache.set(user.id, { user, timestamp: now });
+    });
+    
+    return [...cachedUsers, ...freshUsers];
+  }
+
+  return cachedUsers;
+}
+
+// ❌ BAD: Inefficient, no caching, sequential execution
+async function fetchUsers(userIds: string[]) {
+  const users = [];
+  for (const id of userIds) {
+    users.push(await fetchUser(id)); // Sequential, no caching
+  }
+  return users;
+}
+```
+
+### Common Performance Pitfalls
+- ❌ **N+1 queries**: Fetch in batches or use JOINs
+- ❌ **Synchronous I/O**: Always use async file operations
+- ❌ **Blocking operations**: Use workers for CPU-intensive tasks
+- ❌ **Memory leaks**: Clean up listeners, timers, and subscriptions
+- ❌ **Large payloads**: Use streaming or pagination
+
+## Documentation Standards
+
+### JSDoc for Public APIs
+
+```typescript
+/**
+ * Processes user registration and sends welcome email
+ * 
+ * @param input - User registration data
+ * @param input.email - User's email address (must be valid)
+ * @param input.password - User's password (min 8 chars, must include number and special char)
+ * @param input.name - User's full name
+ * @param options - Optional configuration
+ * @param options.sendEmail - Whether to send welcome email (default: true)
+ * @param options.emailTemplate - Custom email template name
+ * @returns Promise resolving to created user with auth tokens
+ * @throws {ValidationError} When input validation fails
+ * @throws {DuplicateEmailError} When email already exists
+ * @throws {EmailServiceError} When email sending fails
+ * 
+ * @example
+ * ```typescript
+ * const user = await registerUser({
+ *   email: 'user@example.com',
+ *   password: 'SecurePass123!',
+ *   name: 'John Doe'
+ * });
+ * console.log(user.id, user.accessToken);
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * // Skip welcome email
+ * const user = await registerUser(input, { sendEmail: false });
+ * ```
+ */
+export async function registerUser(
+  input: UserRegistrationInput,
+  options?: RegisterUserOptions
+): Promise<AuthenticatedUser> {
+  // Implementation
+}
+```
+
+## Security Checklist
+
+### Must-Follow Security Rules
+- ✅ Store ALL secrets in `.env` file
+- ✅ Validate ALL external input
+- ✅ Use prepared statements for SQL
+- ✅ Implement rate limiting
+- ✅ Hash passwords with bcrypt
+- ✅ Use HTTPS in production
+- ✅ Set security headers
+- ✅ Sanitize HTML input
+- ✅ Implement CSRF protection
+- ✅ Use secure session cookies
+
+## Resources
+
+- **Documentation**: `/docs` directory
+- **MCP Setup**: `docs/MCP_SETUP.md`
+- **Conventions**: `docs/CONVENTIONS.md`
+- **TypeScript**: https://www.typescriptlang.org/docs/
+- **Vitest**: https://vitest.dev/
+- **Biome**: https://biomejs.dev/
+
+## AI Collaboration Guidelines
+
+### When to Ask for Human Review
+- Security-critical changes (auth, permissions)
+- Breaking API changes
+- Database migrations
+- Complex architectural decisions
+- Performance-critical code
+- Ambiguous requirements
+
+### Best Practices
+- Provide clear, specific instructions
+- Break complex tasks into smaller steps
+- Review all generated code thoroughly
+- Test comprehensively before committing
+- Ask questions when requirements are unclear
+
+---
+
+**Remember**: Code quality is not negotiable. Write code that you would be proud to maintain years from now.

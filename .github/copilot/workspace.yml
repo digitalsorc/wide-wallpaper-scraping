@@ -1,0 +1,169 @@
+# GitHub Copilot Workspace Configuration
+# Provides project context for better code generation
+
+name: default-starter-template
+description: Production-ready TypeScript starter template with MCP servers
+
+# Project Structure Context
+structure:
+  source_directory: src
+  test_directory: tests
+  config_directory: .
+  documentation_directory: docs
+
+  entry_point: src/index.ts
+  test_entry: tests/setup.ts
+
+  path_aliases:
+    '@/*': 'src/*'
+    '@tests/*': 'tests/*'
+
+# Technology Stack
+stack:
+  language: TypeScript
+  runtime: Node.js
+  package_manager: pnpm
+
+  frameworks:
+    - Vitest (testing)
+    - Zod (validation)
+
+  tools:
+    - Biome (linting)
+    - Prettier (formatting)
+    - Husky (git hooks)
+    - TypeScript (strict mode)
+
+# Code Generation Rules
+rules:
+  typescript:
+    strict_mode: true
+    explicit_return_types: true
+    no_any: true
+    prefer_unknown: true
+
+  testing:
+    framework: vitest
+    coverage_threshold: 80
+    require_tests_for_new_code: true
+
+  imports:
+    prefer_named_exports: true
+    use_path_aliases: true
+    sort_imports: true
+
+  functions:
+    max_length: 50
+    require_jsdoc: true
+    prefer_pure: true
+
+  error_handling:
+    use_custom_errors: true
+    wrap_external_calls: true
+    validate_inputs: true
+
+# Build Validation
+validation:
+  pre_commit:
+    - pnpm run typecheck
+    - pnpm run lint
+    - pnpm run test
+
+  pre_build:
+    - pnpm run validate-build
+
+  post_build:
+    - pnpm run test:coverage
+    - node scripts/check-coverage.js
+
+# Common Patterns
+patterns:
+  service_pattern: |
+    // Pattern for creating services
+    export class {Name}Service {
+      constructor(private readonly deps: {Name}Dependencies) {}
+      
+      async {action}({params}): Promise<{Result}> {
+        // Implementation with error handling
+      }
+    }
+
+  util_pattern: |
+    // Pattern for utility functions
+    export function {name}({params}): {ReturnType} {
+      // Pure function implementation
+    }
+
+  test_pattern: |
+    // Pattern for tests
+    import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+    describe('{module}', () => {
+      describe('{function}', () => {
+        it('should {expected_behavior}', () => {
+          // Test implementation
+        });
+      });
+    });
+
+# MCP Server Configuration
+mcp_servers:
+  enabled:
+    - filesystem
+    - fetch
+
+  optional:
+    - database-sqlite
+    - github
+    - search
+
+  configuration_file: mcp.json
+  documentation: docs/MCP_SETUP.md
+
+# Documentation Standards
+documentation:
+  readme: README.md
+  architecture: docs/ARCHITECTURE.md
+  contributing: docs/CONTRIBUTING.md
+
+  inline_comments:
+    require_for_complex_logic: true
+    require_jsdoc_for_exports: true
+    prefer_self_documenting_code: true
+
+# Deployment Information
+deployment:
+  build_command: pnpm run build
+  output_directory: dist
+  entry_file: dist/index.js
+
+  pre_deploy_checks:
+    - pnpm run ci
+    - pnpm run security:audit
+    - node scripts/validate-dist.js
+
+# Agent-Specific Instructions
+agent_instructions:
+  before_code_generation:
+    - Review existing code patterns
+    - Check type definitions
+    - Verify dependencies are available
+
+  after_code_generation:
+    - Run typecheck immediately
+    - Generate corresponding tests
+    - Validate build succeeds
+    - Update documentation if needed
+
+  error_recovery:
+    - Parse error messages carefully
+    - Check similar successful implementations
+    - Fix types before logic
+    - Re-run validation after each fix
+
+  quality_gates:
+    - All files must have tests
+    - No TypeScript errors
+    - No linting errors
+    - Coverage threshold met
+    - Build succeeds

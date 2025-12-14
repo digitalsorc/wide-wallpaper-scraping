@@ -1,0 +1,89 @@
+# .npmignore - Controls what gets published to npm
+# More restrictive than .gitignore to keep published package small
+
+# Source files (only ship compiled dist/)
+src/
+tests/
+scripts/
+docs/
+
+# Configuration files
+.editorconfig
+.prettierrc.json
+.prettierignore
+biome.json
+vitest.config.ts
+tsconfig.json
+.cursorrules
+.windsurfrules
+.aider.conf.yml
+mcp.json
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+.env.example
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Build artifacts to exclude
+*.tsbuildinfo
+.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+
+# Development files
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+__tests__/
+__mocks__/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules/
+
+# Lock files (let users manage their own)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Documentation that's not needed in package
+README.md
+CONTRIBUTING.md
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+
+# Husky
+.husky/

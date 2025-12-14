@@ -1,0 +1,75 @@
+# GitHub Copilot CLI Configuration
+# Optimizes command-line agent interactions
+
+version: 1
+
+# Project Context
+context:
+  name: default-starter-template
+  type: typescript-library
+
+  key_files:
+    - src/index.ts
+    - package.json
+    - tsconfig.json
+    - vitest.config.ts
+
+  key_commands:
+    dev: pnpm run dev
+    test: pnpm run test
+    build: pnpm run build
+    validate: pnpm run ci
+
+# Command Suggestions
+commands:
+  common:
+    - name: Start development
+      command: pnpm run dev
+      description: Run application in watch mode
+
+    - name: Run all checks
+      command: pnpm run ci
+      description: TypeScript check, lint, test, and build
+
+    - name: Fix linting issues
+      command: pnpm run lint:fix
+      description: Auto-fix linting issues
+
+    - name: Generate component
+      command: pnpm run generate:component
+      description: Scaffold a new component/service
+
+    - name: Check for updates
+      command: pnpm run deps:check
+      description: Check for outdated dependencies
+
+  troubleshooting:
+    - name: Clean and reinstall
+      command: pnpm run clean:all && pnpm install
+      description: Clean everything and reinstall dependencies
+
+    - name: Check build output
+      command: pnpm run build && ls -la dist/
+      description: Build and inspect output directory
+
+    - name: Debug tests
+      command: pnpm run test:ui
+      description: Open Vitest UI for debugging
+
+# Code Generation Preferences
+# generation preferences (guidelines for contributors, not enforced by Copilot CLI):
+#   - prefer functional style
+#   - add comments for complex logic
+#   - include tests for business logic
+#   - validate code after generation
+
+# Validation Rules
+# validation preferences (guidelines for contributors, not enforced by Copilot CLI):
+#   - auto-run validation after generation
+validation:
+  required_checks:
+    - typecheck
+    - lint
+    - test
+#   - abort on failure
+#   - show error context

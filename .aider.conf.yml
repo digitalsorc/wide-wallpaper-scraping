@@ -1,0 +1,268 @@
+# Aider AI Configuration
+# https://aider.chat/docs/config.html
+
+##############################################################################
+# Model Configuration
+##############################################################################
+
+# Primary model for coding tasks
+# Options: gpt-4-turbo, gpt-4, gpt-3.5-turbo, claude-3-opus, claude-3-sonnet
+model: gpt-4-turbo
+
+# Editor model for quick edits and refactoring
+editor-model: gpt-3.5-turbo
+
+# Edit format: whole, diff, udiff
+edit-format: whole
+
+##############################################################################
+# Git Integration
+##############################################################################
+
+# Automatically commit changes
+auto-commits: true
+
+# Git commit message format (conventional commits)
+commit-prompt: |
+  Write a concise git commit message following conventional commits format.
+
+  Format: <type>(<scope>): <subject>
+
+  Types:
+  - feat: New feature
+  - fix: Bug fix
+  - docs: Documentation changes
+  - style: Code style changes (formatting, semicolons, etc.)
+  - refactor: Code refactoring without changing functionality
+  - perf: Performance improvements
+  - test: Adding or updating tests
+  - chore: Build process, dependencies, tooling
+
+  Examples:
+  - feat(auth): add JWT authentication
+  - fix(api): resolve null pointer exception in user endpoint
+  - docs(readme): update installation instructions
+  - refactor(utils): simplify validation logic
+
+  Keep the subject line under 50 characters.
+  Do not end with a period.
+  Use imperative mood (add, not added or adds).
+
+# Attribute co-authors in commits
+attribute-author: true
+attribute-committer: false
+attribute-commit-message-author: false
+attribute-commit-message-committer: false
+
+##############################################################################
+# File Handling
+##############################################################################
+
+# File patterns to exclude from context
+ignore:
+  - node_modules/**
+  - dist/**
+  - build/**
+  - coverage/**
+  - .pnpm-store/**
+  - .git/**
+  - '*.log'
+  - '*.lock'
+  - '.env'
+  - '.env.*'
+
+# Read-only files (provide context but don't modify)
+read:
+  - LICENSE
+  - package-lock.json
+  - pnpm-lock.yaml
+  - bun.lockb
+
+##############################################################################
+# Code Style & Linting
+##############################################################################
+
+# Lint command to run after changes
+lint-cmd: pnpm run lint:fix
+
+# Auto-lint after changes
+auto-lint: true
+
+# Test command to run after changes
+test-cmd: pnpm run test
+
+# Auto-test after changes (disabled by default to speed up iteration)
+auto-test: false
+
+##############################################################################
+# Editor Integration
+##############################################################################
+
+# Text editor for commit messages
+editor: vim
+
+# Show git diff after edits
+show-diffs: true
+
+# Pretty print in terminal
+pretty: true
+
+# Use color in terminal output
+dark-mode: true
+
+##############################################################################
+# AI Behavior
+##############################################################################
+
+# Message format for AI
+# Options: whole, diff, udiff, ask
+message-format: whole
+
+# Show repository map to AI
+map-tokens: 1024
+
+# Cache prompts to speed up similar requests
+cache-prompts: true
+
+# Stream AI responses
+stream: true
+
+# Voice input/output (requires additional setup)
+voice-language: en
+
+##############################################################################
+# Project-Specific Instructions
+##############################################################################
+
+# Additional instructions for AI
+instructions: |
+  You are working on a production-ready TypeScript starter template.
+
+  CODE STANDARDS:
+  - Use TypeScript strict mode - all code must type check
+  - No 'any' types - use 'unknown' with type guards
+  - Explicit return types for all exported functions
+  - Use async/await over raw promises
+  - Follow AAA pattern for tests (Arrange, Act, Assert)
+
+  NAMING CONVENTIONS:
+  - Files: kebab-case (user-service.ts)
+  - Functions/Variables: camelCase (getUserById)
+  - Classes/Types: PascalCase (UserService)
+  - Constants: UPPER_SNAKE_CASE (MAX_RETRY_COUNT)
+  - Test files: *.test.ts
+
+  FILE ORGANIZATION:
+  - src/index.ts - main entry point
+  - src/types/ - TypeScript type definitions
+  - src/utils/ - utility functions
+  - src/services/ - business logic
+  - src/config/ - configuration
+  - tests/ - test files
+
+  IMPORT ORDER:
+  1. External packages (node_modules)
+  2. Internal modules (relative imports)
+  3. Type imports
+  4. Constants and config
+
+  ERROR HANDLING:
+  - Use custom error classes for domain errors
+  - Always handle errors in async code with try-catch
+  - Provide meaningful error messages with context
+  - Never swallow errors silently
+
+  TESTING:
+  - Write tests for all new functionality
+  - Use descriptive test names: "should do X when Y"
+  - Mock external dependencies
+  - Aim for 80%+ coverage on critical paths
+
+  SECURITY:
+  - Never hardcode secrets or API keys
+  - Validate all external input
+  - Use parameterized queries for databases
+  - Keep dependencies updated
+
+  DOCUMENTATION:
+  - Add JSDoc comments for public APIs
+  - Include @param, @returns, @throws tags
+  - Provide usage examples in documentation
+  - Keep README.md updated with changes
+
+  BEFORE COMMITTING:
+  - Run: pnpm run typecheck
+  - Run: pnpm run lint:fix
+  - Run: pnpm run test
+
+  PERFORMANCE:
+  - Use Promise.all() for parallel async operations
+  - Implement caching where appropriate
+  - Use streaming for large data sets
+  - Consider memory usage for large datasets
+
+  MCP SERVERS:
+  - Available: filesystem, fetch, github, database, search, memory, puppeteer
+  - Configure in mcp.json
+  - See docs/MCP_SETUP.md for details
+
+##############################################################################
+# Advanced Options
+##############################################################################
+
+# Show model costs
+show-model-warnings: true
+
+# Maximum tokens for context
+max-chat-history-tokens: 4096
+
+# Timeout for AI requests (seconds)
+timeout: 300
+
+# Retries for failed requests
+max-retries: 3
+
+# Environment variable for API keys
+env-file: .env
+
+##############################################################################
+# Reporting & Analytics
+##############################################################################
+
+# Check for updates
+check-update: true
+
+# Install update automatically
+install-update: false
+
+# Usage analytics (opt-out if desired)
+analytics: false
+
+##############################################################################
+# Keyboard Shortcuts & Aliases
+##############################################################################
+
+# Aliases for common commands (use in Aider prompt)
+# /add - Add files to context
+# /drop - Remove files from context
+# /undo - Undo last change
+# /diff - Show diff of changes
+# /commit - Commit changes
+# /help - Show help
+
+##############################################################################
+# Notes
+##############################################################################
+#
+# Configuration Priority (highest to lowest):
+# 1. Command-line arguments
+# 2. Environment variables (AIDER_*)
+# 3. .aider.conf.yml in project directory
+# 4. .aider.conf.yml in home directory (~/.aider.conf.yml)
+# 5. Default values
+#
+# To override this config:
+# - Use command-line flags: aider --model gpt-4 --auto-commits false
+# - Set environment variables: export AIDER_MODEL=gpt-4
+#
+# For more options, see: https://aider.chat/docs/config.html

@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+echo "🔍 Running pre-commit validation..."
+
+# Run lint-staged for staged files (allow empty commits)
+pnpm exec lint-staged --allow-empty || {
+  echo "❌ Lint-staged failed. Fix errors and try again."
+  exit 1
+}
+
+# Run quick type check
+echo ""
+echo "🔍 Type checking..."
+pnpm run typecheck || {
+  echo "❌ TypeScript errors found. Fix and try again."
+  exit 1
+}
+
+echo "✅ Pre-commit checks passed"
